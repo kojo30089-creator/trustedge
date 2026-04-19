@@ -33,7 +33,7 @@ const METHODS = [
 const TYPES = [
   { value: "deposit", label: "Inbound (Deposit)" },
   { value: "withdrawal", label: "Outbound (Withdrawal)" },
-  { value: "welcome bonus", label: "Promo (Welcome Bonus)" }
+  { value: "profit", label: "Promo (Profit)" }
 ];
 
 const STATUSES = [
