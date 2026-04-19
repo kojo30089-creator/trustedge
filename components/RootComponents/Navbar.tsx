@@ -38,12 +38,23 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Close menu on route change & manage body scroll
+  // 1. Close menu automatically when the route (pathname) changes
   useEffect(() => {
     setIsOpen(false);
-    document.body.style.overflow = isOpen ? "hidden" : "unset";
-    return () => { document.body.style.overflow = "unset"; };
-  }, [pathname, isOpen]);
+  }, [pathname]);
+
+  // 2. Manage body scroll locking when the menu is toggled
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen]);
 
   return (
     <>
@@ -68,7 +79,7 @@ export default function Navbar() {
           </Link>
 
           {/* DESKTOP NAV - Magnetic Hover Effect */}
-          <nav className="hidden md:flex items-center gap-1 relative z-10" onMouseLeave={() => setHoveredPath(null)}>
+          <nav className="hidden lg:flex items-center gap-1 relative z-10" onMouseLeave={() => setHoveredPath(null)}>
             {navLinks.map((link) => {
               const isActive = pathname === link.href || (pathname === '/' && link.href === '/');
               return (
@@ -113,7 +124,7 @@ export default function Navbar() {
             {mounted && (
               <button
                 onClick={toggleTheme}
-                className="hidden md:flex items-center justify-center h-8 w-8 rounded-md text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
+                className="flex items-center justify-center h-8 w-8 rounded-md text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
                 aria-label="Toggle Theme"
               >
                 <Sun className="h-4 w-4 hidden dark:block" />
@@ -123,7 +134,7 @@ export default function Navbar() {
 
             <Link
               href="/signin"
-              className="hidden md:block text-xs font-semibold tracking-widest text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors uppercase"
+              className="hidden lg:block text-xs font-semibold tracking-widest text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors uppercase"
             >
               Sign In
             </Link>
@@ -131,7 +142,7 @@ export default function Navbar() {
             {/* Sleek CTA Button */}
             <Link
               href="/signup"
-              className="hidden md:flex relative items-center justify-center h-10 px-6 rounded-md bg-slate-900 text-white dark:bg-white dark:text-[#030712] text-xs font-bold tracking-widest uppercase overflow-hidden group transition-transform hover:scale-[1.02] active:scale-[0.98]"
+              className="hidden lg:flex relative items-center justify-center h-10 px-6 rounded-md bg-slate-900 text-white dark:bg-white dark:text-[#030712] text-xs font-bold tracking-widest uppercase overflow-hidden group transition-transform hover:scale-[1.02] active:scale-[0.98]"
             >
               <span className="relative z-10 flex items-center gap-2">
                 Get Started <ArrowRight className="h-3 w-3 transform group-hover:translate-x-1 transition-transform" />
@@ -143,7 +154,7 @@ export default function Navbar() {
             {/* Mobile Menu Toggle */}
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="md:hidden flex items-center justify-center h-10 w-10 rounded-md bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
+              className="lg:hidden flex items-center justify-center h-10 w-10 rounded-md bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
             >
               {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
@@ -159,11 +170,11 @@ export default function Navbar() {
             animate={{ opacity: 1, backdropFilter: "blur(24px)" }}
             exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
             transition={{ duration: 0.4 }}
-            className="fixed inset-0 z-40 bg-white/90 dark:bg-[#030712]/90 flex flex-col pt-24 px-6 transition-colors duration-500"
+            className="hidden fixed inset-0 z-40 bg-white/90 dark:bg-[#030712]/90 md:flex flex-col pt-24 px-6 transition-colors duration-500"
           >
             {/* Mobile Theme Toggle */}
             {mounted && (
-              <div className="absolute top-6 right-20">
+              <div className="absolute hidden top-6 right-20">
                 <button
                   onClick={toggleTheme}
                   className="flex items-center justify-center h-10 w-10 rounded-md bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white"
