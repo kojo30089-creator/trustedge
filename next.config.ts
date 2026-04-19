@@ -5,9 +5,15 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "nyc.cloud.appwrite.io",
+        hostname: "res.cloudinary.com", // For KYC IDs, Receipts, and Profile Pictures
         port: "",
-        pathname: "/**", // Allows all paths from this domain
+        pathname: "/**", 
+      },
+      {
+        protocol: "https",
+        hostname: "ui-avatars.com", // For the fallback avatars in the sidebar
+        port: "",
+        pathname: "/**",
       },
     ],
   },
