@@ -170,7 +170,7 @@ export default function Navbar() {
             animate={{ opacity: 1, backdropFilter: "blur(24px)" }}
             exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
             transition={{ duration: 0.4 }}
-            className="hidden fixed inset-0 z-40 bg-white/90 dark:bg-[#030712]/90 md:flex flex-col pt-24 px-6 transition-colors duration-500"
+            className="lg:hidden fixed inset-0 z-40 bg-white/90 dark:bg-[#030712]/90 flex flex-col pt-24 px-6 transition-colors duration-500"
           >
             {/* Mobile Theme Toggle */}
             {mounted && (
