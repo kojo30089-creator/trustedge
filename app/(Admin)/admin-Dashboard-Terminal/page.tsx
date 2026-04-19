@@ -117,9 +117,9 @@ export default function DashboardPage() {
 
           // 🛡️ SECURITY FILTER: Skip system administrators
           // This ensures admins don't appear in the directory or affect liquidity stats
-          // if (u.role === "admin" || u.isAdmin === true) {
-          //   return; // Move to the next user in the loop
-          // }
+          if (u.role === "admin" || u.isAdmin === true) {
+            return; // Move to the next user in the loop
+          }
 
           formatted.push({
             id: docSnap.id,
