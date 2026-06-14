@@ -308,7 +308,7 @@ export default function DashboardPage() {
 
           <form onSubmit={handleSaveStockPrices} className="space-y-6">
             {[
-              { id: "spacex", label: "SpaceX (SPX)", val: stockForm.spacex },
+              // { id: "spacex", label: "SpaceX (SPX)", val: stockForm.spacex },
               { id: "neuralink", label: "Neuralink (NRLK)", val: stockForm.neuralink },
               { id: "boring", label: "The Boring Co. (TBC)", val: stockForm.boring }
             ].map(stock => (

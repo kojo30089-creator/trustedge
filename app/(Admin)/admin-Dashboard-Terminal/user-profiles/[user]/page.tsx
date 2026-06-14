@@ -5,7 +5,7 @@ import { useModal } from "@/hooks/useModal";
 import { toast } from "sonner";
 import { Modal } from "@/components/ui/modal";
 import Link from "next/link";
-import { fetchStockPrice, fetchTeslaPrice } from "@/lib/handlers/handler";
+import { fetchSpaceXPrice, fetchStockPrice, fetchTeslaPrice } from "@/lib/handlers/handler";
 import Loading from "@/components/ui/Loading";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -92,7 +92,7 @@ export default function AdminUserProfileCard({ params }: Props) {
     useEffect(() => {
         const init = async () => {
             try {
-                const [teslaRaw, spacexRes, neuralinkRes] = await Promise.all([fetchTeslaPrice(), fetchStockPrice("spacex"), fetchStockPrice("neuralink")]);
+                const [teslaRaw, spacexRes, neuralinkRes] = await Promise.all([fetchTeslaPrice(), fetchSpaceXPrice(), fetchStockPrice("neuralink")]);
                 const prices = {
                     tesla: typeof teslaRaw === "string" ? parseFloat(teslaRaw) || 0 : Number(teslaRaw) || 0,
                     spacex: typeof spacexRes === "string" ? parseFloat(spacexRes) || 0 : Number(spacexRes) || 0,

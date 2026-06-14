@@ -14,7 +14,7 @@ import {
   Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { fetchStockPrice, fetchTeslaPrice } from "@/lib/handlers/handler";
+import { fetchSpaceXPrice, fetchStockPrice, fetchTeslaPrice } from "@/lib/handlers/handler";
 import { toast } from "sonner";
 import confetti from "canvas-confetti";
 
@@ -111,7 +111,7 @@ export default function BuySharesPage() {
     setAmount("0");
     setError("");
     try {
-      const price = company === "tesla" ? parseFloat(await fetchTeslaPrice()) : await fetchStockPrice(company);
+      const price = company === "tesla" ? parseFloat(await fetchTeslaPrice()) : company === 'spaceX' ? parseFloat(await fetchSpaceXPrice()) : await fetchStockPrice(company);
       setSharePrice(price);
     } catch (err) {
       console.error("Price Error:", err);

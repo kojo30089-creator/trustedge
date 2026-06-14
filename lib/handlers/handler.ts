@@ -30,6 +30,31 @@ export async function fetchTeslaPrice() {
   }
 }
 
+export async function fetchSpaceXPrice() {
+  // ⚠️ Note: It's best practice to move this API key to your .env file
+  // process.env.NEXT_PUBLIC_FINNHUB_API_KEY
+  const apiKey = 'd583bspr01qptoaq18ogd583bspr01qptoaq18p0';
+
+  if (!apiKey) throw new Error("Missing API Key");
+
+  try {
+    const res = await fetch(
+      `https://finnhub.io/api/v1/quote?symbol=SPCX&token=${apiKey}`,
+      {
+        next: { revalidate: 60 }, // Cache for 60 seconds (Great for Next.js App Router!)
+      }
+    );
+
+    if (!res.ok) throw new Error("Failed to fetch");
+
+    const data = await res.json();
+    return data.c; 
+  } catch (error) {
+    console.error("Finnhub API Error:", error);
+    return 0; 
+  }
+}
+
 // --------------------------------------------------------
 // 2. FIRESTORE CUSTOM PRICES FETCH
 // --------------------------------------------------------
