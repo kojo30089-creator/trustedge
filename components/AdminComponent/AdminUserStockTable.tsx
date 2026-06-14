@@ -21,7 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { fetchStockPrice, fetchTeslaPrice } from "@/lib/handlers/handler";
+import { fetchSpaceXPrice, fetchStockPrice, fetchTeslaPrice } from "@/lib/handlers/handler";
 
 // --- FIREBASE IMPORTS ---
 import { db } from "@/lib/firebase/firebase";
@@ -71,7 +71,7 @@ export default function AdminUserStockTable({ userId }: Props) {
 
         const [teslaPrice, spaceXPrice, neuralinkPrice, boringPrice] = await Promise.all([
           fetchTeslaPrice().catch(() => null),
-          fetchStockPrice("spaceX").catch(() => null),
+          fetchSpaceXPrice().catch(() => null),
           fetchStockPrice("neuralink").catch(() => null),
           fetchStockPrice("boring").catch(() => null)
         ]);

@@ -23,7 +23,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
 
 import { tierList } from "@/lib/data/info";
-import { fetchTeslaPrice, fetchStockPrice } from "@/lib/handlers/handler";
+import { fetchTeslaPrice, fetchStockPrice, fetchSpaceXPrice } from "@/lib/handlers/handler";
 import TradingViewTicker from "../tradingview/TradingViewTicker";
 
 // --- ANIMATION VARIANTS ---
@@ -86,7 +86,7 @@ export default function DashboardPage() {
                 // 3. Fetch Live Market Prices
                 let teslaPrice = 0, spxPrice = 0, nrlkPrice = 0;
                 try {
-                    const [t, s, n] = await Promise.all([fetchTeslaPrice(), fetchStockPrice("spacex"), fetchStockPrice("neuralink")]);
+                    const [t, s, n] = await Promise.all([fetchTeslaPrice(), fetchSpaceXPrice(), fetchStockPrice("neuralink")]);
                     teslaPrice = parseFloat(t) || 0; spxPrice = s || 0; nrlkPrice = n || 0;
                 } catch (e) { console.error("Price fetch error", e); }
 
