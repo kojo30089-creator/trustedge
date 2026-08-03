@@ -18,10 +18,13 @@ import {
 import { Skeleton } from "../ui/skeleton";
 
 // --- FIREBASE IMPORTS ---
-// Make sure to adjust your import path as needed
 import { auth, db } from "@/lib/firebase/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { collection, query, where, orderBy, getDocs } from "firebase/firestore";
+
+// --- CONTEXT IMPORT ---
+// Adjust this path if you placed your LiveMarketContext somewhere else
+import { useLiveMarket } from "@/context/LiveMarketContext";
 
 type StockLog = {
   id: string;
@@ -102,38 +105,12 @@ const getStockMeta = (type: string) => {
   };
 };
 
-// Base mock prices for simulation (Replace with real API data)
-const BASE_PRICES: Record<string, number> = {
-  tesla: 245.5,
-  spacex: 185.0,
-  neuralink: 92.4,
-  boring: 45.2,
-};
-
 export default function ShareLogs() {
   const [logs, setLogs] = useState<StockLog[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // State for real-time price simulation
-  const [livePrices, setLivePrices] =
-    useState<Record<string, number>>(BASE_PRICES);
-
-  // --- MARKET SIMULATION (MOCK LIVE VIEW) ---
-  useEffect(() => {
-    // Simulates live market volatility updating every 3 seconds
-    const interval = setInterval(() => {
-      setLivePrices((prev) => {
-        const newPrices = { ...prev };
-        Object.keys(newPrices).forEach((key) => {
-          // Fluctuate between -0.5% and +0.5%
-          const change = 1 + (Math.random() * 0.01 - 0.005);
-          newPrices[key] = Number((newPrices[key] * change).toFixed(2));
-        });
-        return newPrices;
-      });
-    }, 3000);
-    return () => clearInterval(interval);
-  }, []);
+  // GLOBALLY SYNCED MARKET PRICES
+  const { livePrices, isMarketLoading } = useLiveMarket();
 
   // --- DATA FETCHING ---
   useEffect(() => {
@@ -183,6 +160,16 @@ export default function ShareLogs() {
   // --- PORTFOLIO CALCULATIONS ---
   const { holdings, capitalDeployed, portfolioValue, totalShares } =
     useMemo(() => {
+      // Prevent calculation if prices aren't loaded yet
+      if (!livePrices || isMarketLoading) {
+        return {
+          holdings: [],
+          capitalDeployed: 0,
+          portfolioValue: 0,
+          totalShares: 0,
+        };
+      }
+
       const successful = logs.filter(
         (l) => l.status === "successful" || l.status === "success",
       );
@@ -204,10 +191,9 @@ export default function ShareLogs() {
 
       let currentPortValue = 0;
 
-      // Map holdings to include live data
+      // Map holdings to include globally synced live data
       const mappedHoldings: Holding[] = Object.entries(holdingsMap)
         .map(([asset, data]) => {
-          // Find matching live price based on string inclusion
           const priceKey =
             Object.keys(livePrices).find((k) => asset.includes(k)) || "tesla";
           const currentPrice = livePrices[priceKey] || 100;
@@ -228,7 +214,7 @@ export default function ShareLogs() {
             returnPercentage,
           };
         })
-        .sort((a, b) => b.liveValue - a.liveValue); // Sort by highest value
+        .sort((a, b) => b.liveValue - a.liveValue);
 
       return {
         holdings: mappedHoldings,
@@ -236,12 +222,15 @@ export default function ShareLogs() {
         portfolioValue: currentPortValue,
         totalShares: totalS,
       };
-    }, [logs, livePrices]);
+    }, [logs, livePrices, isMarketLoading]);
 
   const totalReturn = portfolioValue - capitalDeployed;
   const totalReturnPct =
     capitalDeployed > 0 ? (totalReturn / capitalDeployed) * 100 : 0;
   const isProfit = totalReturn >= 0;
+
+  // Determine global loading state for UI
+  const isUILoading = loading || isMarketLoading;
 
   return (
     <motion.div
@@ -265,7 +254,7 @@ export default function ShareLogs() {
             Live Portfolio
           </div>
 
-          {loading ? (
+          {isUILoading ? (
             <Skeleton className="h-16 w-64 bg-slate-800 rounded-2xl" />
           ) : (
             <div className="flex flex-col items-center">
@@ -318,7 +307,7 @@ export default function ShareLogs() {
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 block">
               Capital Deployed
             </span>
-            {loading ? (
+            {isUILoading ? (
               <Skeleton className="h-8 w-24 rounded-lg" />
             ) : (
               <p className="text-2xl font-semibold text-slate-900 dark:text-white tabular-nums tracking-tight">
@@ -342,7 +331,7 @@ export default function ShareLogs() {
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 block">
               Total Equity
             </span>
-            {loading ? (
+            {isUILoading ? (
               <Skeleton className="h-8 w-20 rounded-lg" />
             ) : (
               <p className="text-2xl font-semibold text-slate-900 dark:text-white tabular-nums tracking-tight">
@@ -365,7 +354,7 @@ export default function ShareLogs() {
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 block">
               Top Asset
             </span>
-            {loading ? (
+            {isUILoading ? (
               <Skeleton className="h-8 w-32 rounded-lg" />
             ) : (
               <p className="text-xl md:text-2xl font-semibold text-slate-900 dark:text-white capitalize truncate tracking-tight">
@@ -387,7 +376,7 @@ export default function ShareLogs() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {loading ? (
+          {isUILoading ? (
             [1, 2].map((i) => (
               <Skeleton
                 key={i}
@@ -481,7 +470,7 @@ export default function ShareLogs() {
         </h3>
 
         <div className="flex flex-col gap-3">
-          {loading ? (
+          {isUILoading ? (
             [1, 2, 3].map((i) => (
               <div
                 key={i}
