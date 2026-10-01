@@ -103,7 +103,10 @@ export default function InvestmentPlansPage({ slug }: SlugProp) {
         const profileRef = doc(db, "users", user.uid);
         const profileSnap = await getDoc(profileRef);
         if (profileSnap.exists()) {
-          setBalance(Number(profileSnap.data().totalDeposit) || 0);
+          const snapDeposit = Number(profileSnap.data().totalDeposit);
+          const snapProfit = Number(profileSnap.data().profit);
+          const balance = snapDeposit + snapProfit;
+          setBalance(balance || 0);
         }
 
         const investmentQuery = query(
