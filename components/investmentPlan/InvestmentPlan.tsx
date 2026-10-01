@@ -1,13 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   TrendingUp,
   CheckCircle2,
   AlertTriangle,
   Loader2,
-  ShieldCheck,
   Activity,
   Cpu,
   TerminalSquare,
@@ -23,17 +22,19 @@ import Link from "next/link";
 import { auth, db } from "@/lib/firebase/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import {
+  createInvestment,
+  getAvailableInvestmentBalance,
+  InvestmentFundingError,
+} from "@/lib/firebase/createInvestment";
+import {
   doc,
   getDoc,
   collection,
-  addDoc,
-  updateDoc,
   query,
   where,
   orderBy,
   limit,
   getDocs,
-  serverTimestamp,
 } from "firebase/firestore";
 
 // --- TYPES ---
@@ -85,6 +86,7 @@ export default function InvestmentPlansPage({ slug }: SlugProp) {
 
   const [balance, setBalance] = useState<number>(0);
   const [investing, setInvesting] = useState<boolean>(false);
+  const investmentInFlight = useRef(false);
 
   const [activeInvestment, setActiveInvestment] = useState<string | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<InvestmentPlan | null>(null);
@@ -93,6 +95,9 @@ export default function InvestmentPlansPage({ slug }: SlugProp) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) {
+        setUserId(null);
+        setBalance(0);
+        setActiveInvestment(null);
         setLoading(false);
         return;
       }
@@ -103,10 +108,7 @@ export default function InvestmentPlansPage({ slug }: SlugProp) {
         const profileRef = doc(db, "users", user.uid);
         const profileSnap = await getDoc(profileRef);
         if (profileSnap.exists()) {
-          const snapDeposit = Number(profileSnap.data().totalDeposit);
-          const snapProfit = Number(profileSnap.data().profit);
-          const balance = snapDeposit + snapProfit;
-          setBalance(balance || 0);
+          setBalance(getAvailableInvestmentBalance(profileSnap.data()));
         }
 
         const investmentQuery = query(
@@ -142,48 +144,33 @@ export default function InvestmentPlansPage({ slug }: SlugProp) {
   }, []);
 
   const handleInvest = async () => {
-    if (!userId || !selectedPlan) return;
+    if (!userId || !selectedPlan || investmentInFlight.current) return;
 
-    const amountNum = Number(investAmount) || 0;
-    if (amountNum < selectedPlan.min_amount) {
-      toast.error(`Minimum requirement not met.`);
-      return;
-    }
-    if (balance < amountNum) {
-      toast.error("Insufficient liquidity.");
-      return;
-    }
-
+    investmentInFlight.current = true;
     setInvesting(true);
-    const startedAt = new Date();
-    const endAt = new Date(startedAt);
-    endAt.setDate(startedAt.getDate() + selectedPlan.duration_days);
 
     try {
-      await addDoc(collection(db, "investments"), {
+      const newBalance = await createInvestment(
+        db,
         userId,
-        planId: selectedPlan.id,
-        crypto: slug,
-        amount: amountNum,
-        status: "active",
-        startDate: startedAt,
-        endDate: endAt,
-        createdAt: serverTimestamp(),
-      });
-
-      const newBalance = balance - amountNum;
-      await updateDoc(doc(db, "users", userId), {
-        totalDeposit: newBalance,
-        balance: newBalance,
-      });
+        selectedPlan,
+        slug,
+        Number(investAmount),
+      );
 
       setBalance(newBalance);
       setActiveInvestment(selectedPlan.id);
       setSelectedPlan(null);
       toast.success(`Protocol initiated successfully.`);
     } catch (error) {
-      toast.error("Transaction failed.");
+      console.error(error);
+      toast.error(
+        error instanceof InvestmentFundingError
+          ? error.message
+          : "Transaction failed. Please try again.",
+      );
     } finally {
+      investmentInFlight.current = false;
       setInvesting(false);
     }
   };
@@ -211,7 +198,7 @@ export default function InvestmentPlansPage({ slug }: SlugProp) {
   const isBelowMin = selectedPlan && amountNum < selectedPlan.min_amount;
   const isOverBalance = amountNum > balance;
   const isValid =
-    selectedPlan && !isBelowMin && !isOverBalance && amountNum > 0;
+    selectedPlan && Number.isFinite(amountNum) && !isBelowMin && !isOverBalance && amountNum > 0;
 
   return (
     <div className="max-w-4xl mx-auto px-4 pt-6 pb-24 min-h-[90vh] text-slate-300">
@@ -444,6 +431,8 @@ export default function InvestmentPlansPage({ slug }: SlugProp) {
                       </span>
                       <input
                         type="number"
+                        min={selectedPlan.min_amount}
+                        step="0.01"
                         value={investAmount}
                         onChange={(e) => setInvestAmount(e.target.value)}
                         className={cn(
