@@ -223,7 +223,7 @@ export default function InvestmentPlansPage({ slug }: SlugProp) {
                 })}
               </h2>
               <p className="text-sm font-medium text-slate-400 uppercase tracking-widest">
-                Available Working Capital
+                Available Total Deposit
               </p>
             </div>
 

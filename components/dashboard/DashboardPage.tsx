@@ -172,7 +172,7 @@ export default function UnifiedDashboard() {
 
         const safeDeposit = Number(profile?.totalDeposit) || 0;
         const safeProfit = Number(profile?.profit) || 0;
-        const remainingLiquidBalance = safeDeposit + safeProfit;
+        const remainingLiquidBalance = safeDeposit;
 
         // B. Collections
         const [investmentsSnap, referralsSnap, stockLogsSnap] =
