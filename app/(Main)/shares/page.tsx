@@ -7,7 +7,6 @@ import {
   Zap,
   BrainCircuit,
   Info,
-  CheckCircle2,
   RefreshCw,
   Wallet,
   Pickaxe,
@@ -16,19 +15,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { fetchSpaceXPrice, fetchStockPrice, fetchTeslaPrice } from "@/lib/handlers/handler";
 import { toast } from "sonner";
+import { createSharePurchase, SharePurchaseError } from "@/lib/firebase/createSharePurchase";
 import confetti from "canvas-confetti";
 
 // --- FIREBASE IMPORTS ---
 import { auth, db } from "@/lib/firebase/firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import { 
-  doc, 
-  getDoc, 
-  collection, 
-  addDoc, 
-  updateDoc, 
-  serverTimestamp 
-} from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 
 type Company = "tesla" | "spaceX" | "neuralink" | "boring";
 
@@ -55,8 +48,6 @@ export default function BuySharesPage() {
   const [sharePrice, setSharePrice] = useState(0);
   const [amount, setAmount] = useState<string>("0"); 
   
-  const [totalDeposit, setTotalDeposit] = useState<number>(0);
-  const [profit, setProfit] = useState<number>(0);
   const [availableBalance, setAvailableBalance] = useState<number>(0);
   
   const [error, setError] = useState("");
@@ -92,11 +83,7 @@ export default function BuySharesPage() {
           if (docSnap.exists()) {
             const data = docSnap.data();
             const safeDeposit = Number(data.totalDeposit) || 0;
-            const safeProfit = Number(data.profit) || 0;
-            
-            setTotalDeposit(safeDeposit);
-            setProfit(safeProfit);
-            setAvailableBalance(safeDeposit + safeProfit);
+            setAvailableBalance(Number.isFinite(safeDeposit) && safeDeposit > 0 ? safeDeposit : 0);
           }
         } catch (err) {
           console.error("Balance Error:", err);
@@ -147,7 +134,7 @@ export default function BuySharesPage() {
     const dollars = parseFloat(cleanVal);
     if (!isNaN(dollars) && dollars >= 0) {
       setAmount(cleanVal);
-      if (dollars > availableBalance) setError("Insufficient funds");
+      if (dollars > availableBalance) setError("Insufficient total deposit");
       else setError("");
     }
   };
@@ -155,56 +142,28 @@ export default function BuySharesPage() {
   const handleBuy = async () => {
     const amt = Number(amount);
     const qty = amt / sharePrice;
-    
-    if (!qty || !amt) return setError("Enter a valid amount");
-    if (amt > availableBalance) return setError("Insufficient funds");
+
+    if (isLoading) return;
+    if (!Number.isFinite(qty) || qty <= 0 || !Number.isFinite(amt) || amt <= 0) return setError("Enter a valid amount");
+    if (amt > availableBalance) return setError("Insufficient total deposit");
     if (!userId) return setError("Authentication required");
 
     try {
       setIsLoading(true);
 
-      let newDeposit = totalDeposit;
-      let newProfit = profit;
-      let remainingToDeduct = amt;
-
-      if (remainingToDeduct <= newDeposit) {
-        newDeposit -= remainingToDeduct;
-      } else {
-        remainingToDeduct -= newDeposit;
-        newDeposit = 0;
-        newProfit -= remainingToDeduct;
-      }
-
-      if (newProfit < 0) throw new Error("Math error: negative balance");
-
-      await addDoc(collection(db, "stock_logs"), {
-        userId: userId,
-        shares: Number(qty.toFixed(6)), // Store 6 decimal places for precision
-        amount: amt,
-        pricePerShare: sharePrice,
-        shareType: company,
-        status: "success",
-        createdAt: serverTimestamp()
-      });
-
-      const userRef = doc(db, "users", userId);
-      await updateDoc(userRef, { 
-        totalDeposit: newDeposit,
-        profit: newProfit
-      });
+      const newDeposit = await createSharePurchase(db, userId, company, amt, sharePrice);
 
       shootConfetti();
-      
-      setTotalDeposit(newDeposit);
-      setProfit(newProfit);
-      setAvailableBalance(newDeposit + newProfit);
-      
+      setAvailableBalance(newDeposit);
+
       toast.success(`Order complete! Bought ${qty.toFixed(4)} shares of ${company.toUpperCase()}`);
       setAmount("0");
       
     } catch (err) {
       console.error("Buy Error:", err);
-      toast.error("Transaction failed");
+      const message = err instanceof SharePurchaseError ? err.message : "Transaction failed";
+      setError(message);
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
@@ -230,7 +189,7 @@ export default function BuySharesPage() {
         <motion.div variants={itemVariants} className="flex justify-center mb-8 md:mb-12">
             <div className="flex items-center gap-2.5 bg-white dark:bg-[#121214] border border-slate-100 dark:border-slate-800/60 px-4 py-2 rounded-full shadow-sm">
                 <Wallet className="h-4 w-4 text-emerald-500" />
-                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Available:</span>
+                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Available deposit:</span>
                 <span className="text-sm font-mono font-bold text-slate-900 dark:text-white">
                     ${availableBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                 </span>
