@@ -315,7 +315,10 @@ export default function UnifiedDashboard() {
   };
 
   const totalNetWorth =
-    metrics.remainingBalance + metrics.investmentValue + stockPortfolioValue;
+    metrics.remainingBalance +
+    metrics.investmentValue +
+    stockPortfolioValue +
+    metrics.profit;
   const isGlobalProfit =
     metrics.profit + (stockPortfolioValue - stockCapitalDeployed) >= 0;
 
