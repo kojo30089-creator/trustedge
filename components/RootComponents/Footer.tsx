@@ -43,6 +43,7 @@ export default function Footer() {
         { name: "Terms of Service", href: "/terms" },
         { name: "Cookie Directives", href: "/cookies" },
         { name: "Risk Disclosures", href: "/risk" },
+        {name: "Certificate", href: "/images/Trustedgebroker.png" },
       ],
     },
   ];
