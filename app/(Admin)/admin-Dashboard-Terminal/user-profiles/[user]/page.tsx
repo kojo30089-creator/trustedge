@@ -118,6 +118,8 @@ interface ProfileType {
   btc_address?: string;
   referee_id?: string;
   status?: string;
+  suspensionReason?: string | null;
+  suspendedAt?: string | null;
 
   // Detailed Financials
   balance: number; // Liquid Balance
@@ -592,6 +594,7 @@ export default function AdminUserProfileCard({ params }: Props) {
                   profileDocId={userIdFromParams}
                   userId={profile.id}
                   initialStatus={profile.status}
+                  initialReason={profile.suspensionReason}
                 />
               </motion.div>
             </div>
