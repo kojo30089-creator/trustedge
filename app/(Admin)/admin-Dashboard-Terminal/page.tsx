@@ -61,6 +61,7 @@ interface StockPriceForm {
   spacex: string;
   neuralink: string;
   boring: string;
+  terafab: string;
 }
 
 // --- ANIMATION VARIANTS ---
@@ -111,6 +112,7 @@ export default function DashboardPage() {
     spacex: "",
     neuralink: "",
     boring: "",
+    terafab: "",
   });
   const [stockLoading, setStockLoading] = useState(false);
   const [stockSaving, setStockSaving] = useState(false);
@@ -182,6 +184,7 @@ export default function DashboardPage() {
             spacex: d.spacex?.toString() ?? "",
             neuralink: d.neuralink?.toString() ?? "",
             boring: d.boring?.toString() ?? "",
+            terafab: d.terafab?.toString() ?? "",
           });
         }
       } catch (e) {
@@ -217,6 +220,7 @@ export default function DashboardPage() {
         spacex: parseFloat(stockForm.spacex) || 0,
         neuralink: parseFloat(stockForm.neuralink) || 0,
         boring: parseFloat(stockForm.boring) || 0,
+        terafab: parseFloat(stockForm.terafab) || 0,
       });
       toast.success("Market values updated");
       closeModal();
@@ -443,6 +447,11 @@ export default function DashboardPage() {
                 id: "boring",
                 label: "The Boring Co. (TBC)",
                 val: stockForm.boring,
+              },
+              {
+                id: "terafab",
+                label: "Terafab (TFAB)",
+                val: stockForm.terafab,
               },
             ].map((stock) => (
               <div key={stock.id} className="space-y-1.5">
