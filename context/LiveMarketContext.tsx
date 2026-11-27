@@ -24,6 +24,7 @@ const BASE_PRICES: LivePrices = {
   spacex: 185.0,
   neuralink: 92.4,
   boring: 45.2,
+  terafab: 64.0,
 };
 
 export function LiveMarketProvider({
@@ -40,10 +41,12 @@ export function LiveMarketProvider({
     // 1. Fetch the real prices once
     const initPrices = async () => {
       try {
-        const [tesla, spacex, neuralink] = await Promise.all([
+        const [tesla, spacex, neuralink, boring, terafab] = await Promise.all([
           fetchTeslaPrice(),
           fetchSpaceXPrice(),
           fetchStockPrice("neuralink"),
+          fetchStockPrice("boring"),
+          fetchStockPrice("terafab"),
         ]);
 
         if (isMounted) {
@@ -51,7 +54,8 @@ export function LiveMarketProvider({
             tesla: Number(tesla) || BASE_PRICES.tesla,
             spacex: Number(spacex) || BASE_PRICES.spacex,
             neuralink: Number(neuralink) || BASE_PRICES.neuralink,
-            boring: BASE_PRICES.boring,
+            boring: Number(boring) || BASE_PRICES.boring,
+            terafab: Number(terafab) || BASE_PRICES.terafab,
           });
           setIsMarketLoading(false);
         }
