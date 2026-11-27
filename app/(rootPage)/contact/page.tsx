@@ -18,6 +18,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { companyName } from "@/lib/data/info";
+import { toast } from "sonner";
+import { db } from "@/lib/firebase/firebase";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 
 // --- SECTIONS FOR SIDEBAR ---
 const SECTIONS = [
@@ -71,26 +74,45 @@ export default function ContactPage() {
     e.preventDefault();
     setFormStatus("submitting");
 
+    const payload = {
+      name: formData.name.trim(),
+      email: formData.email.trim(),
+      subject: formData.subject.trim(),
+      message: formData.message.trim(),
+    };
+
+    if (!payload.name || !payload.email || !payload.subject || !payload.message) {
+      toast.error("Please fill in all required fields.");
+      setFormStatus("idle");
+      return;
+    }
+
     try {
-      const response = await fetch('/api/contact', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
+      // 1. Save directly to Firestore (matches client SDK usage across the app)
+      await addDoc(collection(db, "contact_messages"), {
+        ...payload,
+        status: "unread",
+        createdAt: new Date().toISOString(),
+        createdAtServer: serverTimestamp(),
       });
 
-      if (response.ok) {
-        setFormStatus("success");
-        setFormData({ name: "", email: "", subject: "", message: "" }); // Reset form
-      } else {
-        // Handle error state appropriately
-        console.error("Form submission failed");
-        setFormStatus("idle");
-        // You might want to add an error state to show a message to the user
-      }
+      // 2. Best-effort Telegram notification via API route
+      fetch("/api/contact", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      }).catch((err) => {
+        console.error("Telegram notification error:", err);
+      });
+
+      setFormStatus("success");
+      setFormData({ name: "", email: "", subject: "", message: "" });
+      toast.success("Message sent! Our team will review it shortly.");
     } catch (error) {
       console.error("Error submitting form:", error);
+      toast.error("Failed to send message. Please try again.");
       setFormStatus("idle");
     }
   };
