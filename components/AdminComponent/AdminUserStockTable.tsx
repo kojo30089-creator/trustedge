@@ -10,6 +10,7 @@ import {
   Zap,
   Car,
   Pickaxe,
+  Cpu,
   Database
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -28,7 +29,7 @@ import { db } from "@/lib/firebase/firebase";
 import { collection, query, where, orderBy, getDocs } from "firebase/firestore";
 
 interface Props { userId: string; }
-type SupportedCompany = "tesla" | "spaceX" | "neuralink" | "boring";
+type SupportedCompany = "tesla" | "spaceX" | "neuralink" | "boring" | "terafab";
 
 type Transaction = {
   id: string;
@@ -47,7 +48,7 @@ export default function AdminUserStockTable({ userId }: Props) {
   const [loading, setLoading] = useState(true);
 
   const [prices, setPrices] = useState<Record<SupportedCompany, number | null>>({
-    tesla: null, spaceX: null, neuralink: null, boring: null,
+    tesla: null, spaceX: null, neuralink: null, boring: null, terafab: null,
   });
 
   useEffect(() => {
@@ -69,21 +70,22 @@ export default function AdminUserStockTable({ userId }: Props) {
         });
         setTransactions(mapped);
 
-        const [teslaPrice, spaceXPrice, neuralinkPrice, boringPrice] = await Promise.all([
+        const [teslaPrice, spaceXPrice, neuralinkPrice, boringPrice, terafabPrice] = await Promise.all([
           fetchTeslaPrice().catch(() => null),
           fetchSpaceXPrice().catch(() => null),
           fetchStockPrice("neuralink").catch(() => null),
-          fetchStockPrice("boring").catch(() => null)
+          fetchStockPrice("boring").catch(() => null),
+          fetchStockPrice("terafab").catch(() => null)
         ]);
 
-        setPrices({ tesla: teslaPrice, spaceX: spaceXPrice, neuralink: neuralinkPrice, boring: boringPrice });
+        setPrices({ tesla: teslaPrice, spaceX: spaceXPrice, neuralink: neuralinkPrice, boring: boringPrice, terafab: terafabPrice });
       } catch (error) { toast.error("Failed to sync equity ledger"); } finally { setLoading(false); }
     };
     load();
   }, [userId]);
 
   const holdingsByCompany = useMemo(() => {
-    const base: Record<SupportedCompany, Holdings> = { tesla: { shares: 0, costBasis: 0 }, spaceX: { shares: 0, costBasis: 0 }, neuralink: { shares: 0, costBasis: 0 }, boring: { shares: 0, costBasis: 0 } };
+    const base: Record<SupportedCompany, Holdings> = { tesla: { shares: 0, costBasis: 0 }, spaceX: { shares: 0, costBasis: 0 }, neuralink: { shares: 0, costBasis: 0 }, boring: { shares: 0, costBasis: 0 }, terafab: { shares: 0, costBasis: 0 } };
     return transactions.reduce((acc, tx) => {
       if (acc[tx.company]) {
           acc[tx.company].shares += tx.shares;
@@ -94,7 +96,7 @@ export default function AdminUserStockTable({ userId }: Props) {
   }, [transactions]);
 
   const totalPortfolioValue = useMemo(() => {
-    return (["tesla", "spaceX", "neuralink", "boring"] as SupportedCompany[]).reduce((sum, symbol) => sum + holdingsByCompany[symbol].shares * (prices[symbol] ?? 0), 0);
+    return (["tesla", "spaceX", "neuralink", "boring", "terafab"] as SupportedCompany[]).reduce((sum, symbol) => sum + holdingsByCompany[symbol].shares * (prices[symbol] ?? 0), 0);
   }, [prices, holdingsByCompany]);
 
   if (loading) return <div className="p-12 text-center text-xs font-mono text-slate-500 uppercase tracking-widest animate-pulse">Syncing_Equity_Matrix...</div>;
@@ -124,6 +126,7 @@ export default function AdminUserStockTable({ userId }: Props) {
                 <MiniHolding label="SPX" shares={holdingsByCompany.spaceX.shares} />
                 <MiniHolding label="NRLK" shares={holdingsByCompany.neuralink.shares} />
                 <MiniHolding label="TBC" shares={holdingsByCompany.boring.shares} />
+                <MiniHolding label="TFAB" shares={holdingsByCompany.terafab.shares} />
             </div>
         </div>
 
@@ -137,6 +140,7 @@ export default function AdminUserStockTable({ userId }: Props) {
                 <MiniPrice label="SPX" price={prices.spaceX} />
                 <MiniPrice label="NRLK" price={prices.neuralink} />
                 <MiniPrice label="TBC" price={prices.boring} />
+                <MiniPrice label="TFAB" price={prices.terafab} />
             </div>
         </div>
       </div>
@@ -244,6 +248,7 @@ function CompanyBadge({ company, id }: { company: SupportedCompany, id: string }
         spaceX: { icon: <Rocket className="h-4 w-4" />, color: "text-blue-500", bg: "bg-blue-50 dark:bg-blue-500/10", label: "SpaceX (SPX)" },
         neuralink: { icon: <Zap className="h-4 w-4" />, color: "text-purple-500", bg: "bg-purple-50 dark:bg-purple-500/10", label: "Neuralink (NRLK)" },
         boring: { icon: <Pickaxe className="h-4 w-4" />, color: "text-amber-500", bg: "bg-amber-50 dark:bg-amber-500/10", label: "The Boring Co. (TBC)" },
+        terafab: { icon: <Cpu className="h-4 w-4" />, color: "text-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-500/10", label: "Terafab (TFAB)" },
     };
 
     const style = config[company] || config.tesla;

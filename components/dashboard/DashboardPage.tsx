@@ -21,6 +21,7 @@ import {
   Zap,
   BrainCircuit,
   Pickaxe,
+  Cpu,
   Briefcase,
   History,
   AlertCircle,
@@ -118,6 +119,14 @@ const getStockMeta = (type: string) => {
       color: "text-zinc-500",
       bg: "bg-zinc-50 dark:bg-zinc-500/10",
       border: "border-zinc-200 dark:border-zinc-500/20",
+    };
+  if (t.includes("terafab"))
+    return {
+      name: "Terafab",
+      icon: Cpu,
+      color: "text-emerald-500",
+      bg: "bg-emerald-50 dark:bg-emerald-500/10",
+      border: "border-emerald-200 dark:border-emerald-500/20",
     };
   return {
     name: type,
