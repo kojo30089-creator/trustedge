@@ -10,6 +10,7 @@ import {
   RefreshCw,
   Wallet,
   Pickaxe,
+  Cpu,
   Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -23,13 +24,14 @@ import { auth, db } from "@/lib/firebase/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 
-type Company = "tesla" | "spaceX" | "neuralink" | "boring";
+type Company = "tesla" | "spaceX" | "neuralink" | "boring" | "terafab";
 
 const COMPANIES = [
   { id: "tesla", name: "Tesla", ticker: "TSLA", icon: Zap, color: "text-amber-500", bg: "bg-amber-500/10" },
   { id: "spaceX", name: "SpaceX", ticker: "SPX", icon: Rocket, color: "text-blue-500", bg: "bg-blue-500/10" },
   { id: "neuralink", name: "Neuralink", ticker: "NRLK", icon: BrainCircuit, color: "text-purple-500", bg: "bg-purple-500/10" },
   { id: "boring", name: "The Boring Co.", ticker: "TBC", icon: Pickaxe, color: "text-zinc-500", bg: "bg-zinc-500/10" },
+  { id: "terafab", name: "Terafab", ticker: "TFAB", icon: Cpu, color: "text-emerald-500", bg: "bg-emerald-500/10" },
 ];
 
 // --- ANIMATION VARIANTS ---
@@ -52,6 +54,7 @@ export default function BuySharesPage() {
   
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [priceLoading, setPriceLoading] = useState(true);
   const [userId, setUserId] = useState<string>("");
   
   const inputRef = useRef<HTMLInputElement>(null);
@@ -94,14 +97,18 @@ export default function BuySharesPage() {
   }, []);
 
   const loadPrice = async () => {
+    setPriceLoading(true);
     setSharePrice(0);
     setAmount("0");
     setError("");
     try {
       const price = company === "tesla" ? parseFloat(await fetchTeslaPrice()) : company === 'spaceX' ? parseFloat(await fetchSpaceXPrice()) : await fetchStockPrice(company);
-      setSharePrice(price);
+      setSharePrice(Number.isFinite(price) ? price : 0);
     } catch (err) {
       console.error("Price Error:", err);
+      setSharePrice(0);
+    } finally {
+      setPriceLoading(false);
     }
   };
 
@@ -196,15 +203,16 @@ export default function BuySharesPage() {
             </div>
         </motion.div>
 
-        {/* --- 2. ASSET SELECTOR (Horizontal Pills) --- */}
-        <motion.div variants={itemVariants} className="w-full overflow-x-auto no-scrollbar">
-            <div className="flex gap-2.5 py-2 w-max mx-auto">
+        {/* --- 2. ASSET SELECTOR (Wrapped Pills) --- */}
+        <motion.div variants={itemVariants} className="w-full">
+            <div className="flex flex-wrap justify-center gap-2 py-2">
                 {COMPANIES.map((c) => {
                     const isActive = company === c.id;
                     const Icon = c.icon;
                     return (
                         <button
                             key={c.id}
+                            type="button"
                             onClick={() => setCompany(c.id as Company)}
                             className={`
                                 flex items-center gap-2 px-4 py-2.5 rounded-full transition-all duration-300 border
@@ -257,7 +265,11 @@ export default function BuySharesPage() {
 
             {/* Smart Dual-Display (Shows resulting shares instantly) */}
             <div className="mt-6 flex flex-col items-center justify-center gap-1">
-                {sharePrice > 0 ? (
+                {priceLoading ? (
+                    <div className="text-sm text-slate-400 flex items-center gap-2">
+                        <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Fetching live market data...
+                    </div>
+                ) : sharePrice > 0 ? (
                    <>
                      <div className="text-base md:text-lg font-medium text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
                          ≈ {calculatedShares > 0 ? calculatedShares.toFixed(6) : "0"} {currentCompany.ticker}
@@ -267,8 +279,8 @@ export default function BuySharesPage() {
                      </div>
                    </>
                 ) : (
-                    <div className="text-sm text-slate-400 flex items-center gap-2">
-                        <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Fetching live market data...
+                    <div className="text-xs text-amber-500 flex items-center gap-1.5 font-medium">
+                        <Info className="h-3.5 w-3.5" /> Price unavailable — set {currentCompany.ticker} price in Admin Market Settings
                     </div>
                 )}
             </div>
