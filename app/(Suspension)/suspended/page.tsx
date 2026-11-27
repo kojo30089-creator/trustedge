@@ -10,10 +10,22 @@ import { auth, db } from "@/lib/firebase/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 
+interface SuspensionDetails {
+  reason: string | null;
+  suspendedAt: string | null;
+  referenceId: string;
+  userEmail: string | null;
+}
+
 export default function SuspendedPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [reason, setReason] = useState<string | null>(null);
+  const [details, setDetails] = useState<SuspensionDetails>({
+    reason: null,
+    suspendedAt: null,
+    referenceId: "",
+    userEmail: null,
+  });
 
   useEffect(() => {
     // 1. Listen for Firebase Auth state
@@ -44,7 +56,12 @@ export default function SuspendedPage() {
           return;
         }
 
-        setReason(profileData.suspensionReason || null);
+        setDetails({
+          reason: profileData.suspensionReason || null,
+          suspendedAt: profileData.suspendedAt || null,
+          referenceId: user.uid.slice(0, 10).toUpperCase(),
+          userEmail: profileData.email || user.email || null,
+        });
         setLoading(false);
       } catch (error) {
         console.error("Failed to verify suspension status:", error);
@@ -58,12 +75,19 @@ export default function SuspendedPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen w-full bg-[#050505] flex flex-col items-center justify-center text-zinc-500 gap-4">
-        <Loader2 className="h-10 w-10 animate-spin text-brand-500" />
+      <main className="min-h-screen w-full bg-[#050505] flex flex-col items-center justify-center text-zinc-400 gap-4">
+        <Loader2 className="h-10 w-10 animate-spin text-red-500" aria-hidden="true" />
         <p className="text-sm font-medium animate-pulse">Verifying account status...</p>
-      </div>
+      </main>
     );
   }
 
-  return <SuspendedUI reason={reason} />;
+  return (
+    <SuspendedUI
+      reason={details.reason}
+      suspendedAt={details.suspendedAt}
+      referenceId={details.referenceId}
+      userEmail={details.userEmail}
+    />
+  );
 }
