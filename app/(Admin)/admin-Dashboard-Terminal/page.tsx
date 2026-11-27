@@ -29,6 +29,7 @@ import {
   FaArrowTrendUp,
 } from "react-icons/fa6";
 import { cn } from "@/lib/utils";
+import AdminContactMessages from "@/components/AdminComponent/AdminContactMessages";
 
 // --- FIREBASE IMPORTS ---
 import { db } from "@/lib/firebase/firebase";
@@ -424,6 +425,9 @@ export default function DashboardPage() {
           </motion.div>
         </div>
       </section>
+
+      {/* 3.5 CONTACT SUBMISSIONS */}
+      <AdminContactMessages />
 
       {/* 4. STOCK MODAL REFINED */}
       <Modal isOpen={isOpen} onClose={closeModal} className="max-w-md">
